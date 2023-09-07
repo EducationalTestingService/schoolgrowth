@@ -285,7 +285,7 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
 	constraints (see Details).  If equal to "spectral", the function
 	uses the spectral decomposition of the estimated value of
 	\eqn{G}{G} and manipulates eigenvalues to coerce \eqn{G}{G} to
-	be PSD, again maintaining the sum-to-zero constraints. If method equal to "rco" (Oren et al., 2023), 
+	be PSD, again maintaining the sum-to-zero constraints. If method equal to "rco" (Livne et al., 2023), 
         the function uses regularized Cholesky optimization to estimate \eqn{G}{G} to be positive semi-definite (PSD). 
         Refer to control parameters \code{Gadj_eig_tol} and \code{Gadj_eig_min}.
 	Default is "nearPD".
