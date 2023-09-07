@@ -592,6 +592,7 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
   Livne, O.E., Castellano, K.E., & McCaffrey, D.F. (2023). 
   \dQuote{Numerical Algorithm for Estimating a Conditioned Symmetric Positive Definite Matrix Under Constraints}, \emph{Numerical Linear Algebra},\emph{unpublished}.
   Lockwood J.R., Castellano, K.E., & McCaffrey, D.F. (2022).
+
   \dQuote{Improving accuracy and stability of aggregate student growth
   measures using best linear prediction}, \emph{Journal of Educational and Behavioral Statistics},\emph{47}(5), 544-575.
 }
