@@ -8,3 +8,7 @@
 \description{
 Provides tools for smoothing school-level growth measures across years, grades and/or subjects using empirical best linear prediction methods.
 }
+\author{
+\strong{Maintainer}: {J.R.} Lockwood \email{jr@duolingo.com}
+
+}

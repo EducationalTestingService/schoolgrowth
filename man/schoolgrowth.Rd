@@ -592,13 +592,15 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
   Livne, O.E., Castellano, K.E., & McCaffrey, D.F. (2023). 
   \dQuote{Numerical Algorithm for Estimating a Conditioned Symmetric Positive Definite Matrix Under Constraints}, \emph{Numerical Linear Algebra},\emph{unpublished}.
 
-Lockwood J.R., Castellano, K.E., & McCaffrey, D.F. (2022).
+Lockwood, J.R., Castellano, K.E., & McCaffrey, D.F. (2022).
 \dQuote{Improving accuracy and stability of aggregate student growth
-  measures using best linear prediction}, \emph{Journal of Educational and Behavioral Statistics},\emph{47}(5), 544-575.
+  measures using best linear prediction}, \emph{Journal of Educational and Behavioral Statistics}, \emph{47}(5), 544-575.
 }
 
 \author{
-  J.R. Lockwood \email{jrlockwood@ets.org}
+  J.R. Lockwood \email{jr@duolingo.com}
+
+ Katherine E. Castellano \email{kecastellano@ets.org}
 }
 
 \examples{
@@ -643,6 +645,15 @@ print(m$R)
 ## direct, EBLP and hybrid estimates of target for each school,
 ## along with estimated MSEs
 print(m$aggregated_growth)
+
+## re-fit model with Gadj_method='rco'
+m.rco <- schoolgrowth(growthscores,
+     target = c(years="final", subjects="math", grades="all", weights="n"),
+     control=list(quietly=TRUE, mse_blp_chk=FALSE, jackknife=FALSE,Gadj_method="rco"))
+print(m.rco$Ginfo) ##Note that for method=rco, Graw=Gadj
+print(cor(m.rco$aggregated_growth$est.blp,m$aggregated_growth$est.blp))
+print(cor(m.rco$aggregated_growth$mse.blp,m$aggregated_growth$mse.blp))
+
 
 \dontrun{
 ## changing the target

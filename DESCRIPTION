@@ -5,8 +5,18 @@ Version: 0.6-3
 Date: 2022-03-27
 Depends: R (>= 3.5.0)
 Imports: stats, methods, Matrix, foreach, doParallel
-Author: J.R. Lockwood
-Maintainer: J.R. Lockwood <jr@duolingo.com>
+Authors@R: 
+    c(person(given = "{J.R.}",
+           family = "Lockwood",
+           role = c("aut", "cre"),
+           email = "jr@duolingo.com"),
+    person(given = "Katherine",
+           family = "Castellano",
+           role = c("aut","cre"),
+           email = "kecastellano@ets.org"))
+Author: J.R. Lockwood [aut, cre],
+  Katherine E. Castellano [aut, cre]
+Maintainer: Katherine E. Castellano <kecastellano@ets.org>
 Description: Provides tools for smoothing school-level growth measures across years, grades and/or subjects using empirical best linear prediction methods.
 License: GPL (>= 2)
 Encoding: UTF-8
