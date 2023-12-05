@@ -8,13 +8,13 @@ Reference: Lockwood, J. R., Castellano, K. E., & McCaffrey, D. F. (2022). Improv
 ## INSTALLATION 
 
 Install within the program R by using:
-devtools:::install_github("EducationalTestingService/schoolgrowth")
-library(schoolgrowth)
+`devtools:::install_github("EducationalTestingService/schoolgrowth")`
+`library(schoolgrowth)`
 
 ## EXAMPLES
 
 To run examples, use: 
-example(schoolgrowth) 
+`example(schoolgrowth)`
 
 ## CONTRIBUTING TO THE PACKAGE
 
