@@ -10,7 +10,7 @@
   provided.}
 
 \usage{
-schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
+schoolgrowth(d, target = NULL, target_contrast = NULL, control = list(),...)
 }
 
 \arguments{
@@ -307,17 +307,21 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
 	"spectral"}, then the smallest eigenvalue of the adjusted
 	\eqn{R}{R} will be greater than or equal to \code{Radj_eig_min},
 	aside from the one corresponding to the sum-to-zero constraints.
-	Only applicable for Gadj_method 	equal to "nearPD" or "spectral". 	Default is 0.0.
+	Only applicable for \code{Gadj_method} 	equal to "nearPD" or "spectral". 	Default is 0.0.
       }
 
 	\item{Gadj_optmethod: }{
-	Character string. Can take on any optimization method available 	for the "optim" function. Only applicable for Gadj_method equal to 	"rco". Default is "NLOPT_LD_LBFGS". Any algorithms available for the "nloptr" function can be used.  
+	Character string. Can take on any optimization method available 	for the "optim" function. Only applicable for \code{Gadj_method} equal to 	"rco". Default is "NLOPT_LD_LBFGS". Any algorithms available for the "nloptr" function can be used.  
 	}
 
 	\item{parallel: }{
-	Logical. If TRUE, parallelization is used when implementing jack-	knife replications for estimating \eqn{G}{G}. If FALSE, 	parallelization is 	not used. Using parallelization can help 	speed up the estimation of \eqn{G}{G}, particularly when using 	Gadj_method equal to "rco" and using jack-knife when have a large 	number of aggregation units. Default is FALSE.
+	Logical. If TRUE, parallelization is used when implementing jack-	knife replications for estimating \eqn{G}{G}. If FALSE, 	parallelization is 	not used. Using parallelization can help 	speed up the estimation of \eqn{G}{G}, particularly when using 	\code{Gadj_method} equal to "rco" and using jack-knife when have a large 	number of aggregation units. Default is FALSE.
 	} 
     }
+  }
+  \item{...}{    
+    Additional arguments to pass to \code{rco_fun} if want to modify the defaults of \code{leeway_factor}=1.1, 
+  \code{num_alpha}=5, \code{alpha_init}=100, \code{alpha_step}=0.01, \code{tol}=1e-6, \code{neval}=1000. 
   }
 }
 
@@ -550,6 +554,12 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
       \code{\link{Matrix}} package.
     }
 
+    \item{G_info: }{
+      The residual and condition number for estimating \code{G}. When 
+      \code{Gadj_method}="rco", the ROC curve is also included that 
+      is used to identify the optimal alpha level. 
+    }
+
     \item{d: }{
       If \code{control$return_d = TRUE}, a dataframe similar to \code{d}
       but with additional fields created by the function.
@@ -584,13 +594,22 @@ schoolgrowth(d, target = NULL, target_contrast = NULL, control = list())
       jackknife variance estimate of the \eqn{(i,j)}{(i,j)} element of
       \eqn{G}.
     }
-    
+    \item{roc_curves_jack: }{
+      If \code{control$jackknife = TRUE}, the ROC curve used in finding 
+      the optimal alpha level for the \code{Gadj_method}="rco" for each jack-
+      knife replicate.
+    }   
+    \item{G_info_jack: }{
+      If \code{control$jackknife = TRUE}, the selected alpha level and
+     corresponding residual for estimating \code{G} when \code{Gadj_method}="rco" 
+     for each jack-knife replicate.
+    }   
   }
 }
 
 \references{
-  Livne, O.E., Castellano, K.E., & McCaffrey, D.F. (2023). 
-  \dQuote{Numerical Algorithm for Estimating a Conditioned Symmetric Positive Definite Matrix Under Constraints}, \emph{Numerical Linear Algebra},\emph{unpublished}.
+  Livne, O.E., Castellano, K.E., & McCaffrey, D.F. (2024). 
+  \dQuote{Numerical Algorithm for Estimating a Conditioned Symmetric Positive Definite Matrix Under Constraints}, \emph{Numerical Linear Algebra with Applications}.
 
 Lockwood, J.R., Castellano, K.E., & McCaffrey, D.F. (2022).
 \dQuote{Improving accuracy and stability of aggregate student growth

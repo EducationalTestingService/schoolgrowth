@@ -185,7 +185,7 @@ grad.fun <- function(x,z,Wmat,cmat,alpha=0) {
 
 
 
-rco_fun	<- function(optmethod="NLOPT_LD_LBFGS",zsum,cmat,Wmat,leeway_factor=1.1,num_alpha=5,alpha_init=100,alpha_step=0.01,tol=1e-6,neval=1000) {
+rco_fun	<- function(zsum,cmat,Wmat,optmethod="NLOPT_LD_LBFGS",leeway_factor=1.1,num_alpha=5,alpha_init=100,alpha_step=0.01,tol=1e-6,neval=1000) {
 	n		<- nrow(cmat)-1
 	N		<- n*(n+1)/2
 	x_init	<- diag(n)
@@ -214,6 +214,68 @@ rco_fun	<- function(optmethod="NLOPT_LD_LBFGS",zsum,cmat,Wmat,leeway_factor=1.1,
 
 	roc_x			<- lapply(roc,FUN=function(x) x[[1]])
 	roc_curve		<- as.data.frame(t(sapply(roc,FUN=function(x) x[[2]])))
+
+	##find optimal alpha if residuals=1
+	if(length(roc_curve[,2][roc_curve[,2]>.99])>=round(.8*num_alpha)) {
+		outalp	<- numeric()
+		for(alph in alpha_values) {
+			opt	<- nloptr(x0=x_init,eval_grad=grad.fun,eval_f=llt.fun,z=zsum,Wmat=Wmat,cmat=cmat,alpha=alph,opts=list("algorithm"=optmethod,xtol_rel=tol,maxeval=neval))
+			resid 	<- llt.fun(x=opt$solution,z=zsum,Wmat=Wmat,cmat=cmat,alpha=0)^.5
+			l	<- matrix(0,nrow=n,ncol=n)
+			l[lower.tri(l,diag=TRUE)] <- opt$solution
+			gstar		<- l%*%t(l)
+			lam		<- eigen(gstar)$values
+			condnum 	<- abs(max(lam))/abs(min(lam))	
+			outalp	<- rbind(outalp,cbind.data.frame(alpha=alph,resid=resid,condnum=condnum))
+			if(resid<.99) {
+				break
+			}
+		}
+		##find the first alpha value that is less than 1
+		ind_alp	<- min(which(outalp$resid<.99))
+		
+		##run finer grained alphas between alpha[ind_alp-1] and alpha[ind_alp]
+		alpha_values2 <- exp(seq(log(outalp[ind_alp-1,1]),log(outalp[ind_alp,1]),length=10))
+		outalp2	<- numeric()
+		for(alph in alpha_values2) {
+			opt	<- nloptr(x0=x_init,eval_grad=grad.fun,eval_f=llt.fun,z=zsum,Wmat=Wmat,cmat=cmat,alpha=alph,opts=list("algorithm"=optmethod,xtol_rel=tol,maxeval=neval))
+			resid 	<- llt.fun(x=opt$solution,z=zsum,Wmat=Wmat,cmat=cmat,alpha=0)^.5
+			l	<- matrix(0,nrow=n,ncol=n)
+			l[lower.tri(l,diag=TRUE)] <- opt$solution
+			gstar		<- l%*%t(l)
+			lam		<- eigen(gstar)$values
+			condnum 	<- abs(max(lam))/abs(min(lam))	
+			outalp2	<- rbind(outalp2,cbind.data.frame(alpha=alph,resid=resid,condnum=condnum))
+			alph_which	<- which(alpha_values2==alph)
+			if(resid<.99) {
+				break
+			}
+		}
+	
+		##find the first alpha value that is less than 1
+		ind_alp2	<- min(which(outalp2$resid<.99))
+
+		##run the continuation process again with new set of alphas
+		alpha_values3 <- outalp2$alpha[ind_alp2]*alpha_step^c(0:(num_alpha-1))
+		x	<- x_init
+		for(alph in alpha_values3) {
+			opt	<- nloptr(x0=x,eval_grad=grad.fun,eval_f=llt.fun,z=zsum,Wmat=Wmat,cmat=cmat,alpha=alph,opts=list("algorithm"=optmethod,xtol_rel=tol,maxeval=neval))
+			resid 	<- llt.fun(x=opt$solution,z=zsum,Wmat=Wmat,cmat=cmat,alpha=0)^.5
+			l	<- matrix(0,nrow=n,ncol=n)
+			l[lower.tri(l,diag=TRUE)] <- opt$solution
+			gstar		<- l%*%t(l)
+			lam		<- eigen(gstar)$values
+			condnum 	<- abs(max(lam))/abs(min(lam))	
+			x		<- opt$solution
+
+			roc[[which(alpha_values3==alph)]][[1]]	<- opt$solution
+			roc[[which(alpha_values3==alph)]][[2]]	<- c(alph,resid,condnum)
+		}
+	roc_x		<- lapply(roc,FUN=function(x) x[[1]])
+	roc_curve	<- as.data.frame(t(sapply(roc,FUN=function(x) x[[2]])))
+	leeway_factor	<- 1.02
+	}
+
 	names(roc_curve)	<- c("alpha","residual","cond")
 	index			<- which(roc_curve$residual < leeway_factor*min(roc_curve$residual))
 	if(length(index)==0) {
@@ -234,6 +296,19 @@ rco_fun	<- function(optmethod="NLOPT_LD_LBFGS",zsum,cmat,Wmat,leeway_factor=1.1,
 	out[[2]]$curve	<- roc_curve
 	out[[2]]$x	<- outx
 	out
+}
+
+residfun <- function(IP,S,G,wmat,ysumj) {
+        fgpi <- vector("list",S)
+	for(s in 1:S) {
+		if(!is.null(IP[[s]])) {
+			fgpi[[s]] <- (as.matrix(IP[[s]])) %*% as.matrix(G) %*% t(as.matrix(IP[[s]]))
+		}
+	}
+	lams <- eigen(as.matrix(G[1:(ncol(G)-1),1:(ncol(G)-1)]))$values
+	residj <- sqrt(sum((wmat)*(ysumj-Reduce("+",Filter(Negate(is.null),fgpi)))^2))/sqrt(sum((wmat)*ysumj^2))
+	condj <- abs(max(lams))/abs(min(lams))
+	c(residual=residj,cond=condj)
 }
 
 

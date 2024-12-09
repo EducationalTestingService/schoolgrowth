@@ -1,4 +1,4 @@
-schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = list()){
+schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = list(),...){
 
     ## basic argument checks
     reqnames <- c("stuid","school","grade","year","subject","Y")
@@ -148,7 +148,8 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 	    stop("Invalid specification of control$Gadj_optmethod")
 	}
     }
-    
+
+
     ## create block-level dataset "dblock" providing unique combinations of year*grade*subject
     ## and their block labels and IDs
     ## NOTE: don't use unique() due to excessive RAM usage.
@@ -1036,6 +1037,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 	   Gstar   	<- vector("list",J+1)
 	   G		<- vector("list",J+1)
 	   roc_curve	<- vector("list",J+1)
+	   G_info	<- vector("list",J+1)
 
    	   tm0    <- proc.time()
 
@@ -1057,14 +1059,16 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
                   G[[j]]     <- Gadj(Graw[[j]], control$Gadj_method, control$Gadj_eig_tol, control$Gadj_eig_min)
                   rownames(G[[j]]) <- colnames(G[[j]]) <- .blocknames
 	          roc_curve[[j]] 	<- list(NULL)
+		  G_info[[j]] <- residfun(IP=Is_Pis,S=S,G=G[[j]],wmat=Wmat,ysumj=cmat)
 		}
                 if(control$Gadj_method=="rco") {
-	          outs	 	<- rco_fun(optmethod=control$Gadj_optmethod,zsum=zsumj,cmat=cmat,Wmat=Wmat) 
+	          outs	 	<- rco_fun(optmethod=control$Gadj_optmethod,zsum=zsumj,cmat=cmat,Wmat=Wmat,...) 
                   Gstar[[j]]   	<- outs[[1]]
                   .G          	<- as.matrix(A %*% Gstar[[j]] %*% t(A))
                   .Graw        	<- new("dspMatrix", Dim=c(B,B), uplo="L", x=.G[lower.tri(.G, diag=TRUE)])
                   G[[j]]        <- Graw[[j]]  <- .Graw
 	          roc_curve[[j]]	<- outs[[2]]$curve
+	          G_info[[j]]	<- outs[[2]]$info
                 }
 
             rownames(G[[j]]) 	<- colnames(G[[j]]) <- .blocknames
@@ -1080,7 +1084,8 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 		Gstar  	= Gstar,
 		Graw	= Graw,
    		G	= G,
-		roc_curve = roc_curve
+		roc_curve = roc_curve,
+		G_info = G_info
 	    )
 	
  	   ## Set the name for the class
@@ -1110,15 +1115,17 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
               ## PSD adjustment
               G          <- Gadj(.G, control$Gadj_method, control$Gadj_eig_tol, control$Gadj_eig_min)
 	      roc_curve	 <- list(NULL)
+	      G_info 	 <- residfun(IP=Is_Pis,S=S,G=G,wmat=Wmat,ysumj=cmat)
               rownames(G) <- colnames(G) <- .blocknames
             } 
             if(control$Gadj_method=="rco") {
-	      outs	 <- rco_fun(optmethod=control$Gadj_optmethod,zsum=zsumj,cmat=cmat,Wmat=Wmat) 
+	      outs	 <- rco_fun(optmethod=control$Gadj_optmethod,zsum=zsumj,cmat=cmat,Wmat=Wmat,...) 
               Gstar      <- outs[[1]]
               G          <- as.matrix(A %*% Gstar %*% t(A))
               .G         <- new("dspMatrix", Dim=c(B,B), uplo="L", x=G[lower.tri(G, diag=TRUE)])
               G          <- .G
 	      roc_curve	 <- outs[[2]]$curve
+	      G_info	 <- outs[[2]]$info
               rownames(G) <- colnames(G) <- .blocknames
             }
             rownames(G) 	<- colnames(G) <- .blocknames
@@ -1129,6 +1136,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 ##		result$error	<- error
 ##		result$condnum 	<- condnum
 		result$roc_curve 	<- roc_curve
+		result$G_info	<- G_info
 		return(result)
         }
         parallel::stopCluster(cl)
@@ -1144,6 +1152,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 	error		<- sapply(oper, '[', 'error')
 	condnum		<- sapply(oper, '[', 'condnum')
 	roc_curve	<- sapply(oper, '[', 'roc_curve')
+	G_info		<- sapply(oper, '[', 'G_info')
 	}
        ## add full-sample pieces to dblockpairs
        dblockpairs$Graw <- Graw[[1]]@x
@@ -1163,7 +1172,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 			   Gadj=sqrt(sum((Wmat)*(Ysum[[1]]-Reduce("+",Filter(Negate(is.null),fgpi_adj)))^2))/sqrt(sum((Wmat)*Ysum[[1]]^2)))
 	Ginfo$condnum <- c(Graw=abs(max(lam_Graw))/abs(min(lam_Graw)),Gadj=abs(max(lam_Gadj))/abs(min(lam_Gadj)))
 	Ginfo$roc_curve <- roc_curve[[1]]	
-        rm(.W,  Zsum, Ysum,Graw)
+##        rm(.W,  Zsum, Ysum,Graw)
         ## ############################################################################        
         ## if control$jackknife, use jackknife samples to estimate variance of G
         ## ############################################################################
@@ -1417,6 +1426,9 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
                R                      = R,
 	       Wmat                   = Wmat,  
 	       Ginfo    	      = Ginfo,
+	       Is_Pis                 = Is_Pis,
+               Ysum                   = Ysum,
+	       Zsum		      = Zsum,
                aggregated_growth      = .agg)
     
     if(control$return_d){
@@ -1427,6 +1439,8 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
         .r$G_jack     <- G[-1]
         .r$Gstar_jack <- Gstar[-1]
         .r$varhat_G   <- varhat_G
+	.r$roc_curves_jack <- roc_curve[-1]
+	.r$G_info_jack <- G_info[-1]
     }
 
     return(.r)
