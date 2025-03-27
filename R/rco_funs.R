@@ -232,7 +232,7 @@ rco_fun	<- function(zsum,cmat,Wmat,optmethod="NLOPT_LD_LBFGS",leeway_factor=1.1,
 			}
 		}
 		##find the first alpha value that is less than 1
-		ind_alp	<- min(which(outalp$resid<.99))
+		ind_alp	<- min(which(outalp$resid<(1-1e-6)))
 		
 		##run finer grained alphas between alpha[ind_alp-1] and alpha[ind_alp]
 		alpha_values2 <- exp(seq(log(outalp[ind_alp-1,1]),log(outalp[ind_alp,1]),length=10))
@@ -247,13 +247,13 @@ rco_fun	<- function(zsum,cmat,Wmat,optmethod="NLOPT_LD_LBFGS",leeway_factor=1.1,
 			condnum 	<- abs(max(lam))/abs(min(lam))	
 			outalp2	<- rbind(outalp2,cbind.data.frame(alpha=alph,resid=resid,condnum=condnum))
 			alph_which	<- which(alpha_values2==alph)
-			if(resid<.99) {
+			if(resid<1-1e-6) {
 				break
 			}
 		}
 	
 		##find the first alpha value that is less than 1
-		ind_alp2	<- min(which(outalp2$resid<.99))
+		ind_alp2	<- min(which(outalp2$resid<1-1e-6))
 
 		##run the continuation process again with new set of alphas
 		alpha_values3 <- outalp2$alpha[ind_alp2]*alpha_step^c(0:(num_alpha-1))

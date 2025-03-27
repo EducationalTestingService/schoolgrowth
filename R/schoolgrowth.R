@@ -1423,6 +1423,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
                modstats               = modstats,
                tab_patterns           = tab_patterns,
                G                      = G[[1]],
+	       Graw		      = Graw[[1]],
                R                      = R,
 	       Wmat                   = Wmat,  
 	       Ginfo    	      = Ginfo,
@@ -1437,6 +1438,7 @@ schoolgrowth <- function(d, target = NULL, target_contrast = NULL, control = lis
 
     if(control$jackknife){
         .r$G_jack     <- G[-1]
+        .r$Graw_jack     <- G[-1]
         .r$Gstar_jack <- Gstar[-1]
         .r$varhat_G   <- varhat_G
 	.r$roc_curves_jack <- roc_curve[-1]
